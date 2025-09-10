@@ -1,0 +1,9 @@
+version: "0.1.0"
+description: "Pandatouch Espressif Component"
+url: "https://github.com/bigtreetech/PandaTouch_IDF"
+targets:
+  - esp32s3
+dependencies:
+  idf: ">=5.1"
+  espressif/esp_lcd_touch: "*"
+  espressif/esp_lcd_touch_gt911: "*"

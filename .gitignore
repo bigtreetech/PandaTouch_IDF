@@ -1,0 +1,40 @@
+# ESP-IDF component build artifacts
+build/
+*.elf
+*.bin
+*.map
+*.log
+*.d
+*.o
+*.a
+*.gcno
+*.gcda
+*.gcov
+*.pyc
+__pycache__/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code settings
+.vscode/
+
+# Environment files
+.env
+.envrc
+*.env
+
+# Other common ignores
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+
+# Do not commit local configuration
+local.conf
+
+/* Do not commit dist */
+dist/
