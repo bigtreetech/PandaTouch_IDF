@@ -19,7 +19,7 @@
 #include "usb/msc_host_vfs.h" // IDF 5.1: VFS mount helper
 
 #include "pandatouch_msc.h" // your header: types, macros, prototypes
-
+#include "pandatouch_lvgl_msc.h"
 #include <stdlib.h>
 
 // -------- Config --------
@@ -119,6 +119,14 @@ bool pt_usb_start(void)
     s_info.state = PT_USB_STATE_WAITING_DEVICE;
     s_info.capacity_bytes = 0;
     s_info.block_size = 0;
+
+#ifdef CONFIG_PT_LVGL_USE_PT_INTERNAL_STDIO
+    // register LVGL stdio FS driver (if not already done)
+    // this allows LVGL to access files on the USB mass storage device
+    // using standard FILE* calls (fopen, fread, etc)
+    // and LVGL's built-in stdio FS driver
+    pt_lvgl_stdio_fs_init();
+#endif
 
     ESP_LOGI(TAG, "USB MSC host ready; waiting for device…");
     return true;
