@@ -12,24 +12,25 @@ A compact ESP-IDF component collection for PandaTouch-style LCD + touch hardware
 - [Supported software & hardware 🧰](#supported-software--hardware)
 - [Features ✨](#features)
 - [Documentation 📚](#documentation)
-- [Installation & configuration 🛠️](#installation--configuration)
+- [Configuration 🛠️](#configuration)
+  - [Setup PandaTouch Kconfig](#setup-pandatouch-kconfig)
   - [LVGL memory allocator (Kconfig)](#lvgl-memory-allocator-kconfig)
-  - [Kconfig options (rendering & runtime)](#kconfig-options-rendering--runtime)
-  - [Create a new project 🆕](#create-a-new-project)
-    - [Add via IDF Component Manager (git or local path) (recommended) 🔗](#a--add-via-idf-component-manager-git-or-local-path-recommended)
-    - [Use it as a local component (components/) 📁](#b--use-it-as-a-local-component-components)
-    - [Add as a Git submodule 🔀](#c--add-as-a-git-submodule)
+  - [LVGL stdio-backed FS (Kconfig)](#lvgl-stdio-backed-fs-kconfig)
+  - [LVGL render options](#lvgl-render-options)
+- [Create a new project 🆕](#create-a-new-project)
+  - [Add via IDF Component Manager (git or local path) (recommended) 🔗](#a--add-via-idf-component-manager-git-or-local-path-recommended)
+  - [Use it as a local component (components/) 📁](#b--use-it-as-a-local-component-components)
+  - [Add as a Git submodule 🔀](#c--add-as-a-git-submodule)
 - [Minimal project example 🧩](#minimal-project-example-mainc)
 - [Usage examples 🧪](#usage-examples)
-  - [Display + LVGL (minimal) 🖥️](#display--lvgl-minimal)
+- [Examples (where to find & how to run) 🗂️](#examples-where-to-find--how-to-run)
+- [API quick reference 📖](#api-quick-reference)
+  - [Display + LVGL (minimal)](#display--lvgl)
   - [Touch (GT911 low-level) ✋](#touch-gt911-low-level)
   - [USB-MSC (event-driven) 🔌](#usb-msc-vfs-wrapper)
-- [API quick reference 📖](#api-quick-reference-)
-- [Examples (where to find & how to run) 🗂️](#examples-where-to-find--how-to-run)
 - [Troubleshooting ⚠️](#troubleshooting)
 - [Contributing 🤝](#contributing)
 - [License 📜](#license)
-- [Appendix & Links 🔗](#appendix--links)
 
 ## Prerequisites
 
@@ -65,15 +66,32 @@ Additional, higher-detail documentation is available in the repository. Key docs
 - [msc.md](./msc.md) — USB-MSC wrapper API, examples and ownership rules
 - [docs/touch.md](./docs/touch.md) — low-level touch driver details (GT911)
 - [docs/lvgl_touch.md](./docs/lvgl_touch.md) — LVGL glue and input device mapping
+- [Espressif FAQ ](https://docs.espressif.com/projects/esp-faq/en/latest/software-framework/peripherals/lcd.html#why-do-i-get-drift-overall-drift-of-the-display-when-esp32-s3-is-driving-an-rgb-lcd-screen) - Why do I get drift (overall drift of the display) when ESP32-S3 is driving an RGB LCD screen?
 
-Open the files directly in this repo or view them in your browser via GitHub.
+## Configuration
 
-## Installation & configuration
+### Setup PandaTouch Kconfig
+
+To change PandaTouch-specific Kconfig options (for example the LVGL allocator or
+the LVGL stdio-backed FS option) open the ESP-IDF menuconfig for your project
+and navigate to the component's configuration section. Typical steps:
+
+1. From your project's root (where `idf.py` lives) run:
+
+```bash
+idf.py menuconfig
+```
+
+2. In menuconfig:
+
+- Open "Component config" → look for an entry named `PandaTouch` .
+
+3. Toggle or edit the option and press `S` to save, then exit menuconfig.
 
 ### LVGL memory allocator (Kconfig)
 
 This component ships an optional internal LVGL memory allocator enabled by the
-`PT_USE_CUSTOM_INTERNAL_MALLOC` Kconfig option (which depends on `LV_USE_CUSTOM_MALLOC`).
+`PT_LVGL_USE_PT_INTERNAL_MALLOC` Kconfig option (which depends on `LV_USE_CUSTOM_MALLOC`).
 When enabled (the default in this component), PandaTouch_IDF provides a minimal
 implementation of the `lv_mem*\*`hooks that places LVGL heap allocations into
 SPIRAM (when available). If you disable this option you must provide your own`lv_mem_init()` / allocator hooks for LVGL in your app.
@@ -106,26 +124,56 @@ SPIRAM (when available). If you disable this option you must provide your own`lv
   > allocation flags accordingly.
 
   Keep an eye on LVGL heap size and fragmentation for larger UIs; a custom
-  allocator tuned to your board may yield better performance.
+  allocator may yield better performance.
 
-### Kconfig options (rendering & runtime)
+### LVGL stdio-backed FS (Kconfig)
+
+This component includes an optional Kconfig option `PT_LVGL_USE_PT_INTERNAL_STDIO`.
+When enabled, `pt_usb_start()` will call `pt_lvgl_stdio_fs_init()` to register a
+small LVGL filesystem driver that uses the C stdio (fopen/fread/fwrite) and
+POSIX DIR APIs (opendir/readdir) so LVGL can read files using absolute paths
+such as "/usb/..." after a USB MSC device is mounted.
+
+Why use it:
+
+- Lets LVGL image loaders and file-backed APIs open files directly from the
+  mounted MSC VFS (handy for `lv_img_set_src("/usb/photo.png")`).
+
+Caveats:
+
+- LVGL image decoders and file APIs must be enabled in your LVGL configuration.
+- The driver registers the '/' LVGL FS letter and expects the MSC VFS to be
+  mounted at `PT_USB_MOUNT_PATH` (default `/usb`). If you change the mount
+  path, adjust usages accordingly.
+- This option is optional and safe to disable if you prefer to register a
+  different LVGL filesystem driver yourself.
+- The USB-MSC API ownership rules remain the same: directory lists returned by
+  `pt_usb_list_dir()` still own `char *` strings and must be freed with
+  `pt_usb_dir_list_free()`.
+
+How to enable:
+
+- Toggle `PT_LVGL_USE_PT_INTERNAL_STDIO` in your project's `menuconfig` (search
+  for `PT_LVGL_USE_PT_INTERNAL_STDIO`) or set the Kconfig option in your build.
+
+### LVGL Render Options
 
 Below are the most important Kconfig knobs that affect rendering memory and
 runtime behavior. Tweak these based on whether your board has PSRAM and the
 size/complexity of your UI.
 
-- PT_LV_RENDER_METHOD / radio choice
+- PT_LVGL_RENDER_METHOD / radio choice
 
-  - Default: `PARTIAL_2_PSRAM` (ping-pong partial buffers, internal preferred).
+  - Default: `PARTIAL_2` (ping-pong partial buffers, internal preferred).
   - See the detailed table and guidance in [docs/display.md](./docs/display.md#render-methods) (section "Render methods") and the enum definition in [include/pandatouch_display.h](./include/pandatouch_display.h).
 
-- PT_LV_RENDER_PARTIAL_BUFFER_LINES (int, default 80)
+- PT_LVGL_RENDER_PARTIAL_BUFFER_LINES (int, default 80)
 
   - Number of vertical lines per partial buffer. Higher values use more RAM
     but reduce flush frequency; lower values save memory at cost of more
     frequent flushes.
 
-- PT_LV_RENDER_BOUNCING_BUFFER_LINES (int, default 10)
+- PT_LVGL_RENDER_BOUNCING_BUFFER_LINES (int, default 10)
 
   - Scanlines used by the small bounce buffer that smooths partial flushes.
 
@@ -133,7 +181,7 @@ size/complexity of your UI.
   - Stack reserved for the LVGL thread. Increase this when running larger
     displays, heavier LVGL tasks, or when using complex touch drivers.
 
-### Create a new project
+## Create a new project
 
 This section shows three common ways to create a fresh ESP-IDF project and include `PandaTouch_IDF`: (A) use the IDF component manager (recommended), (B) add the component locally in `components/`, or (C) add it as a Git submodule.
 
@@ -227,7 +275,7 @@ Then build as usual. This keeps a tracked copy of the dependency within your rep
 
 ## Usage examples
 
-- Display + LVGL (minimal) 🖥️
+- Display LVGL
 
   ```c
   if (pt_display_init() != ESP_OK) {
@@ -280,7 +328,29 @@ Then build as usual. This keeps a tracked copy of the dependency within your rep
   }
   ```
 
-## API quick reference 📖
+## Examples (where to find & how to run)
+
+- `examples/display_sample.c` — LVGL + scheduler + backlight demo
+- `examples/msc_sample.c` — Demonstrates USB Mass Storage usage with mount/unmount event callbacks; ideal for event-driven applications.
+- `examples/display_slideshow.c` — Full-stack LVGL + USB demo that displays PNG images from a mounted USB device.
+
+> Example sources shipped in `PandaTouch_IDF/examples/` are not automatically compiled by a host project. Copy files you want into your `main/` or add an example `CMakeLists.txt` that builds the desired example as an app.
+
+How to build an example
+
+    ```bash
+    # from project root
+    idf.py fullclean  # optional, helpful when switching IDF versions
+    . $IDF_PATH/export.sh
+    idf.py build
+    idf.py -p /dev/ttyUSB0 flash monitor
+    ```
+
+If you prefer to add this component to an existing app:
+
+- Place the repo in `components/PandaTouch_IDF` or add it to your project workspace, then include the headers and link normally.
+
+## API quick reference
 
 A compact, scannable reference grouped by subsystem. Function | signature | short description.
 
@@ -330,27 +400,6 @@ Notes
 - Error conventions: `0` = success, `-ENODEV` = not mounted, `-EINVAL` = invalid arg (e.g., non-absolute path), other negative values = `-errno` from syscalls.
 - Ownership: `pt_usb_list_dir()` returns heap-allocated strings for `name` and `path` — free the list with `pt_usb_dir_list_free()`.
 
-## Examples (where to find & how to run) 🗂️
-
-- `examples/display_sample.c` — LVGL + scheduler + backlight demo
-- `examples/msc_sample.c` — mount-callback-driven MSC demo (recommended for event-driven apps)
-
-> Example sources shipped in `PandaTouch_IDF/examples/` are not automatically compiled by a host project. Copy files you want into your `main/` or add an example `CMakeLists.txt` that builds the desired example as an app.
-
-How to build an example
-
-    ```bash
-    # from project root
-    idf.py fullclean  # optional, helpful when switching IDF versions
-    . $IDF_PATH/export.sh
-    idf.py build
-    idf.py -p /dev/ttyUSB0 flash monitor
-    ```
-
-If you prefer to add this component to an existing app:
-
-- Place the repo in `components/PandaTouch_IDF` or add it to your project workspace, then include the headers and link normally.
-
 ## Troubleshooting
 
 Common problems
@@ -366,7 +415,7 @@ Common problems
 
 See also: [CONTRIBUTING.md](./CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
 
-## License 📜
+## License
 
 This repository is provided under the MIT License (assumed). Replace or specify a different license if required.
 
