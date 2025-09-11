@@ -10,9 +10,6 @@ typedef struct
 {
     int tp_w, tp_h;   // raw touch space (from controller)
     int scr_w, scr_h; // LVGL display resolution
-    bool swap_xy;
-    bool invert_x;
-    bool invert_y;
 } pt_lvgl_touch_ctx_t;
 
 static pt_lvgl_touch_ctx_t s_ctx = {0};
@@ -23,17 +20,7 @@ static inline void pt_lvgl_touch_map_point(int rx, int ry, int *ox, int *oy)
     int x = rx;
     int y = ry;
 
-    if (s_ctx.swap_xy)
-    {
-        int t = x;
-        x = y;
-        y = t;
-    }
-
-    if (s_ctx.invert_x)
-        x = (s_ctx.tp_w - 1) - x;
-    if (s_ctx.invert_y)
-        y = (s_ctx.tp_h - 1) - y;
+    /* No swap/invert for this screen: coordinates map directly */
 
     // Scale to display
     // (int64 to avoid overflow if someone uses large coords)
@@ -77,8 +64,7 @@ static void pt_lvgl_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data)
 
 /* Public init */
 lv_indev_t *pt_lvgl_touch_init(lv_display_t *disp,
-                               int tp_w, int tp_h,
-                               bool swap_xy, bool invert_x, bool invert_y)
+                               int tp_w, int tp_h)
 {
     // Ensure GT911 is up (safe if already called)
     esp_err_t err = pt_touch_begin();
@@ -103,9 +89,6 @@ lv_indev_t *pt_lvgl_touch_init(lv_display_t *disp,
     s_ctx.tp_h = (tp_h > 0) ? tp_h : PT_GT911_MAX_Y;
     s_ctx.scr_w = hor;
     s_ctx.scr_h = ver;
-    s_ctx.swap_xy = swap_xy;
-    s_ctx.invert_x = invert_x;
-    s_ctx.invert_y = invert_y;
 
     // Create input device (LVGL v9 object API)
     lv_indev_t *indev = lv_indev_create();
@@ -118,9 +101,8 @@ lv_indev_t *pt_lvgl_touch_init(lv_display_t *disp,
     lv_indev_set_read_cb(indev, pt_lvgl_touch_read_cb);
     lv_indev_set_disp(indev, use_disp);
 
-    ESP_LOGI(TAG, "PT GT911 LVGL indev registered (%ldx%ld touch -> %ldx%ld disp) swap=%d invX=%d invY=%d",
-             (long)s_ctx.tp_w, (long)s_ctx.tp_h, (long)s_ctx.scr_w, (long)s_ctx.scr_h,
-             (int)s_ctx.swap_xy, (int)s_ctx.invert_x, (int)s_ctx.invert_y);
+    ESP_LOGI(TAG, "PT GT911 LVGL indev registered (%ldx%ld touch -> %ldx%ld disp)",
+             (long)s_ctx.tp_w, (long)s_ctx.tp_h, (long)s_ctx.scr_w, (long)s_ctx.scr_h);
 
     return indev;
 }

@@ -19,7 +19,7 @@
 #include "pandatouch_board.h"
 
 #ifdef CONFIG_LV_USE_CUSTOM_MALLOC
-#ifdef PT_USE_CUSTOM_INTERNAL_MALLOC
+#ifdef CONFIG_PT_USE_CUSTOM_INTERNAL_MALLOC
 void lv_mem_init(void)
 {
 }
@@ -123,16 +123,23 @@ static void pt_backlight_init(int duty_percent)
     ESP_ERROR_CHECK(ledc_update_duty(PT_BL_LEDC_SPEED_MODE, PT_BL_LEDC_CHANNEL));
 }
 
-int pt_backlight_set(uint32_t percent, bool save)
+bool pt_backlight_set(uint32_t percent)
 {
     if (percent > PT_BL_MAX)
+    {
         percent = PT_BL_MAX;
-    if (save)
-        pt_backlight_setting = percent;
+    }
+
+    /* update in-memory setting; persistence is not handled here */
+    pt_backlight_setting = percent;
+
     esp_err_t e = ledc_set_duty(PT_BL_LEDC_SPEED_MODE, PT_BL_LEDC_CHANNEL, pt_backlight_percent_to_duty(percent));
     if (e == ESP_OK)
+    {
         e = ledc_update_duty(PT_BL_LEDC_SPEED_MODE, PT_BL_LEDC_CHANNEL);
-    return (e == ESP_OK) ? 0 : -1;
+    }
+
+    return (e == ESP_OK) ? true : false;
 }
 
 /* ====================== Panel init ====================== */
@@ -351,7 +358,7 @@ esp_err_t pt_display_init(void)
 {
     /* Backlight early for smooth fade-in */
     pt_backlight_init(5);
-    pt_backlight_set(100, true);
+    pt_backlight_set(100);
 
     /* Step 1: LCD panel (no LVGL yet) */
     ESP_RETURN_ON_ERROR(pt_lcd_panel_init(), TAG, "panel_init");
@@ -367,17 +374,18 @@ esp_err_t pt_display_init(void)
                                              pt_lcd_panel_handle),
                         TAG, "pt_lvgl_display_init");
 
-    bool swap_xy = false;  // set true if 90°/270° rotation
-    bool invert_x = false; // set true if X is mirrored
-    bool invert_y = false; // set true if Y is mirrored
-
-    lv_indev_t *indev = pt_lvgl_touch_init(pt_disp, 800, 480, swap_xy, invert_x, invert_y);
+    lv_indev_t *indev = pt_lvgl_touch_init(pt_disp, 800, 480);
     (void)indev;
 
     /* Step 3: LVGL runtime (tick + task) */
     ESP_RETURN_ON_ERROR(pt_lvgl_start_runtime(), TAG, "pt_lvgl_start_runtime");
 
     return ESP_OK;
+}
+
+uint32_t pt_backlight_get(void)
+{
+    return pt_backlight_setting;
 }
 
 void pt_display_schedule_ui(pt_ui_fn_t fn, void *arg)

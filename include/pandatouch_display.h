@@ -23,7 +23,8 @@ extern "C"
 
     /* ======= Lifecycle ======= */
     esp_err_t pt_display_init(void);
-    int pt_backlight_set(uint32_t percent, bool save);
+    bool pt_backlight_set(uint32_t percent);
+    uint32_t pt_backlight_get(void);
 
     /* ======= LVGL helpers ======= */
     /* Schedule a function to run on the LVGL thread (lv_async_call) */

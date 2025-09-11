@@ -2,7 +2,7 @@ menu "PandaTouch"
 # --- Mutually-exclusive render method (radio buttons)
 choice PT_LV_RENDER_METHOD_CHOICE
     prompt "LVGL render method"
-    default PT_LV_RENDER_PARTIAL_2
+    default PT_LV_RENDER_PARTIAL_2_PSRAM
 
 config PT_LV_RENDER_FULL_1
     bool "FULL_1  (one full buffer in PSRAM)"
@@ -91,9 +91,10 @@ config PT_LVGL_TASK_STACK_SIZE
 config PT_USE_CUSTOM_INTERNAL_MALLOC
     bool "Use internal custom malloc for LVGL"
     depends on LV_USE_CUSTOM_MALLOC
+    default y
     help
-      Enables the use of a custom internal memory allocator for LVGL.
-      This can help to reduce fragmentation and improve performance
-      on systems with limited memory resources.
+      Enables the use of the custom internal Pandatouch_IDF memory allocator for LVGL otherwise you
+      must provide your own implementation of lv_mem_init().
+
 
 endmenu
