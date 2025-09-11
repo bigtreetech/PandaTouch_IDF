@@ -2,7 +2,7 @@ menu "PandaTouch"
 # --- Mutually-exclusive render method (radio buttons)
 choice PT_LV_RENDER_METHOD_CHOICE
     prompt "LVGL render method"
-    default PT_LV_RENDER_PARTIAL_2_PSRAM
+    default PT_LV_RENDER_PARTIAL_2
 
 config PT_LV_RENDER_FULL_1
     bool "FULL_1  (one full buffer in PSRAM)"
