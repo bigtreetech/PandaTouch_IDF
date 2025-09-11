@@ -19,13 +19,13 @@ Headers required by callers:
 
 - `pt_ui_fn_t` — function pointer type for scheduling work on the LVGL thread: `typedef void (*pt_ui_fn_t)(void *arg);`
 
-- `pt_lv_render_method_t` — enum describing supported render methods (mirrors board Kconfig):
-  - `PT_LV_RENDER_FULL_1`
-  - `PT_LV_RENDER_FULL_2`
-  - `PT_LV_RENDER_PARTIAL_1`
-  - `PT_LV_RENDER_PARTIAL_2` (default)
-  - `PT_LV_RENDER_PARTIAL_1_PSRAM`
-  - `PT_LV_RENDER_PARTIAL_2_PSRAM`
+- `PT_LVGL_render_method_t` — enum describing supported render methods (mirrors board Kconfig):
+  - `PT_LVGL_RENDER_FULL_1`
+  - `PT_LVGL_RENDER_FULL_2`
+  - `PT_LVGL_RENDER_PARTIAL_1`
+  - `PT_LVGL_RENDER_PARTIAL_2` (default)
+  - `PT_LVGL_RENDER_PARTIAL_1_PSRAM`
+  - `PT_LVGL_RENDER_PARTIAL_2_PSRAM`
 
 ## Render methods
 
@@ -42,10 +42,10 @@ The firmware exposes several LVGL render strategies selectable via Kconfig. Choo
 
 Additional Kconfig knobs you may care about:
 
-- `PT_LV_RENDER_PARTIAL_BUFFER_LINES` — number of vertical lines per partial buffer (higher = fewer flushes, more memory).
-- `PT_LV_RENDER_BOUNCING_BUFFER_LINES` — number of scanlines in the bounce buffer (used by some drivers).
+- `PT_LVGL_RENDER_PARTIAL_BUFFER_LINES` — number of vertical lines per partial buffer (higher = fewer flushes, more memory).
+- `PT_LVGL_RENDER_BOUNCING_BUFFER_LINES` — number of scanlines in the bounce buffer (used by some drivers).
 
-When building firmware for constrained devices, prefer PARTIAL\_\* variants with small `PT_LV_RENDER_PARTIAL_BUFFER_LINES`. If you have abundant PSRAM and want tear-free double-buffering choose FULL_2.
+When building firmware for constrained devices, prefer PARTIAL\_\* variants with small `PT_LVGL_RENDER_PARTIAL_BUFFER_LINES`. If you have abundant PSRAM and want tear-free double-buffering choose FULL_2.
 
 ## Lifecycle
 

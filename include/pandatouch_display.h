@@ -13,13 +13,13 @@ extern "C"
     /* ======= Public render method enum (mirrors Kconfig) ======= */
     typedef enum
     {
-        PT_LV_RENDER_FULL_1 = 0,
-        PT_LV_RENDER_FULL_2,
-        PT_LV_RENDER_PARTIAL_1,
-        PT_LV_RENDER_PARTIAL_2, /* default */
-        PT_LV_RENDER_PARTIAL_1_PSRAM,
-        PT_LV_RENDER_PARTIAL_2_PSRAM
-    } pt_lv_render_method_t;
+        PT_LVGL_RENDER_FULL_1 = 0,
+        PT_LVGL_RENDER_FULL_2,
+        PT_LVGL_RENDER_PARTIAL_1,
+        PT_LVGL_RENDER_PARTIAL_2, /* default */
+        PT_LVGL_RENDER_PARTIAL_1_PSRAM,
+        PT_LVGL_RENDER_PARTIAL_2_PSRAM
+    } PT_LVGL_render_method_t;
 
     /* ======= Lifecycle ======= */
     esp_err_t pt_display_init(void);

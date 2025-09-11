@@ -19,7 +19,7 @@
 #include "pandatouch_board.h"
 
 #ifdef CONFIG_LV_USE_CUSTOM_MALLOC
-#ifdef CONFIG_PT_USE_CUSTOM_INTERNAL_MALLOC
+#ifdef CONFIG_PT_LVGL_USE_PT_INTERNAL_MALLOC
 void lv_mem_init(void)
 {
 }
@@ -165,7 +165,7 @@ static esp_err_t pt_lcd_panel_init(void)
         },
         .data_width = 16,
         .num_fbs = 0, /* LVGL owns buffers */
-        .bounce_buffer_size_px = CONFIG_PT_LV_RENDER_BOUNCING_BUFFER_LINES * PT_LCD_H_RES,
+        .bounce_buffer_size_px = CONFIG_PT_LVGL_RENDER_BOUNCING_BUFFER_LINES * PT_LCD_H_RES,
         .psram_trans_align = 64,
         .hsync_gpio_num = PT_LCD_HSYNC_PIN,
         .vsync_gpio_num = PT_LCD_VSYNC_PIN,
@@ -208,14 +208,14 @@ static void *pt_malloc_caps(size_t sz, uint32_t caps_primary, uint32_t caps_fall
     return p;
 }
 
-static bool pt_lvgl_setup_buffers(lv_display_t *disp, int hor_res, int ver_res, pt_lv_render_method_t method)
+static bool pt_lvgl_setup_buffers(lv_display_t *disp, int hor_res, int ver_res, PT_LVGL_render_method_t method)
 {
     const size_t px_size = sizeof(lv_color_t);
     const size_t full_bytes = (size_t)hor_res * (size_t)ver_res * px_size;
 
     switch (method)
     {
-    case PT_LV_RENDER_FULL_1:
+    case PT_LVGL_RENDER_FULL_1:
     {
         lv_color_t *fb1 = (lv_color_t *)pt_malloc_caps(full_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_8BIT);
         if (!fb1)
@@ -224,7 +224,7 @@ static bool pt_lvgl_setup_buffers(lv_display_t *disp, int hor_res, int ver_res, 
         ESP_LOGI(TAG, "Buffers: FULL_1 (1x %u KB PSRAM)", (unsigned)(full_bytes / 1024));
         break;
     }
-    case PT_LV_RENDER_FULL_2:
+    case PT_LVGL_RENDER_FULL_2:
     {
         lv_color_t *fb1 = (lv_color_t *)pt_malloc_caps(full_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_8BIT);
         lv_color_t *fb2 = (lv_color_t *)pt_malloc_caps(full_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_8BIT);
@@ -240,14 +240,14 @@ static bool pt_lvgl_setup_buffers(lv_display_t *disp, int hor_res, int ver_res, 
         ESP_LOGI(TAG, "Buffers: FULL_2 (2x %u KB PSRAM)", (unsigned)(full_bytes / 1024));
         break;
     }
-    case PT_LV_RENDER_PARTIAL_1:
-    case PT_LV_RENDER_PARTIAL_2:
-    case PT_LV_RENDER_PARTIAL_1_PSRAM:
-    case PT_LV_RENDER_PARTIAL_2_PSRAM:
+    case PT_LVGL_RENDER_PARTIAL_1:
+    case PT_LVGL_RENDER_PARTIAL_2:
+    case PT_LVGL_RENDER_PARTIAL_1_PSRAM:
+    case PT_LVGL_RENDER_PARTIAL_2_PSRAM:
     {
-        const int lines = CONFIG_PT_LV_RENDER_PARTIAL_BUFFER_LINES;
+        const int lines = CONFIG_PT_LVGL_RENDER_PARTIAL_BUFFER_LINES;
         const size_t part_bytes = (size_t)hor_res * (size_t)lines * px_size;
-        const bool psram_first = (method == PT_LV_RENDER_PARTIAL_1_PSRAM || method == PT_LV_RENDER_PARTIAL_2_PSRAM);
+        const bool psram_first = (method == PT_LVGL_RENDER_PARTIAL_1_PSRAM || method == PT_LVGL_RENDER_PARTIAL_2_PSRAM);
         const uint32_t caps_int = MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT;
         const uint32_t caps_psr = MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT;
 
@@ -258,7 +258,7 @@ static bool pt_lvgl_setup_buffers(lv_display_t *disp, int hor_res, int ver_res, 
         if (!pb1)
             return false;
 
-        const bool pingpong = (method == PT_LV_RENDER_PARTIAL_2 || method == PT_LV_RENDER_PARTIAL_2_PSRAM);
+        const bool pingpong = (method == PT_LVGL_RENDER_PARTIAL_2 || method == PT_LVGL_RENDER_PARTIAL_2_PSRAM);
         if (pingpong)
         {
             lv_color_t *pb2 = (lv_color_t *)pt_malloc_caps(part_bytes, primary, fallback);
@@ -288,7 +288,7 @@ static bool pt_lvgl_setup_buffers(lv_display_t *disp, int hor_res, int ver_res, 
 
 /* ====================== LVGL display init ====================== */
 static esp_err_t pt_lvgl_display_init(lv_display_t **out_disp,
-                                      pt_lv_render_method_t method,
+                                      PT_LVGL_render_method_t method,
                                       lv_color_format_t color_fmt,
                                       lv_display_flush_cb_t flush_cb,
                                       void *user_data)
@@ -365,7 +365,7 @@ esp_err_t pt_display_init(void)
 
     /* Step 2: LVGL core + display */
     lv_init();
-    pt_lv_render_method_t method = (pt_lv_render_method_t)CONFIG_PT_LV_RENDER_METHOD;
+    PT_LVGL_render_method_t method = (PT_LVGL_render_method_t)CONFIG_PT_LVGL_RENDER_METHOD;
 
     ESP_RETURN_ON_ERROR(pt_lvgl_display_init(&pt_disp,
                                              method,

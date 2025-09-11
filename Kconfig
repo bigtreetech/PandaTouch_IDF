@@ -1,35 +1,66 @@
 menu "PandaTouch"
-# --- Mutually-exclusive render method (radio buttons)
-choice PT_LV_RENDER_METHOD_CHOICE
-    prompt "LVGL render method"
-    default PT_LV_RENDER_PARTIAL_2
 
-config PT_LV_RENDER_FULL_1
+config PT_LVGL_USE_PT_INTERNAL_MALLOC
+    bool "Use the internal component custom malloc for LVGL"
+    depends on LV_USE_CUSTOM_MALLOC
+    default y
+    help
+      Enables the use of the custom internal Pandatouch_IDF memory allocator for LVGL otherwise you
+      must provide your own implementation of lv_mem_init().
+
+config PT_LVGL_USE_PT_INTERNAL_STDIO
+    bool "Use the internal component custom stdio FS for LVGL"
+    default y
+    help
+      Enables the use of the custom internal Pandatouch_IDF stdio filesystem for LVGL otherwise you
+      must provide your own implementation of the LVGL filesystem functions.
+
+config PT_LVGL_RENDER_BOUNCING_BUFFER_LINES
+    int "Number of scanlines in the esp_lcd_rgb_panel_config_t bounce buffer"
+    range 10 64
+    default 10
+    help
+      Number of scanlines in the esp_lcd_rgb_panel_config_t bounce buffer
+
+config PT_LVGL_TASK_STACK_SIZE
+    int "LVGL task stack size (kB)"
+    range 8 64
+    default 8
+    help
+      Amount of stack (in kilobytes) to reserve for the LVGL task/thread.
+      Minimum is 8 kB. Increase this value if LVGL, display drivers or touch drivers
+      require larger stacks on your target hardware.
+
+choice PT_LVGL_RENDER_METHOD_CHOICE
+    prompt "LVGL render method"
+    default PT_LVGL_RENDER_PARTIAL_2
+
+config PT_LVGL_RENDER_FULL_1
     bool "FULL_1  (one full buffer in PSRAM)"
     help 
         FULL_1 (one full buffer in PSRAM)
         Enables rendering using a single full-size buffer allocated in PSRAM.
 
-config PT_LV_RENDER_FULL_2
+config PT_LVGL_RENDER_FULL_2
     bool "FULL_2  (two full buffers in PSRAM)"
     help
         FULL_2 (two full buffers in PSRAM)
         Enables rendering using two full-size buffers allocated in PSRAM (double buffering).
         Allows for smoother rendering and reduced tearing, but requires more PSRAM.
         
-config PT_LV_RENDER_PARTIAL_1
+config PT_LVGL_RENDER_PARTIAL_1
     bool "PARTIAL_1 (single partial buffer; prefer INTERNAL)"
     help
         PARTIAL_1 (single partial buffer; prefer INTERNAL)
         Uses a single partial buffer for rendering, preferably in internal memory.
 
-config PT_LV_RENDER_PARTIAL_2
+config PT_LVGL_RENDER_PARTIAL_2
     bool "PARTIAL_2 (ping-pong partial; prefer INTERNAL)"
     help
         PARTIAL_2 (ping-pong partial; prefer INTERNAL)
         Uses two partial buffers in a ping-pong fashion, preferably in internal memory.
 
-config PT_LV_RENDER_PARTIAL_1_PSRAM
+config PT_LVGL_RENDER_PARTIAL_1_PSRAM
     bool "PARTIAL_1_PSRAM (single partial; prefer PSRAM)"
     help
         PARTIAL_1_PSRAM (single partial; prefer PSRAM)
@@ -37,7 +68,7 @@ config PT_LV_RENDER_PARTIAL_1_PSRAM
         Useful when internal memory is limited but PSRAM is available.
         Reduces memory pressure on internal RAM.
 
-config PT_LV_RENDER_PARTIAL_2_PSRAM
+config PT_LVGL_RENDER_PARTIAL_2_PSRAM
     bool "PARTIAL_2_PSRAM (ping-pong partial; prefer PSRAM)"
     help
         PARTIAL_2_PSRAM (ping-pong partial; prefer PSRAM)
@@ -46,15 +77,15 @@ config PT_LV_RENDER_PARTIAL_2_PSRAM
         Helps to minimize tearing while keeping memory requirements low.
 endchoice
 
-# --- Integer mirror so code can keep using CONFIG_PT_LV_RENDER_METHOD
-config PT_LV_RENDER_METHOD
+# --- Integer mirror so code can keep using CONFIG_PT_LVGL_RENDER_METHOD
+config PT_LVGL_RENDER_METHOD
     int
-    default 0 if PT_LV_RENDER_FULL_1
-    default 1 if PT_LV_RENDER_FULL_2
-    default 2 if PT_LV_RENDER_PARTIAL_1
-    default 3 if PT_LV_RENDER_PARTIAL_2       # (previous default)
-    default 4 if PT_LV_RENDER_PARTIAL_1_PSRAM
-    default 5 if PT_LV_RENDER_PARTIAL_2_PSRAM
+    default 0 if PT_LVGL_RENDER_FULL_1
+    default 1 if PT_LVGL_RENDER_FULL_2
+    default 2 if PT_LVGL_RENDER_PARTIAL_1
+    default 3 if PT_LVGL_RENDER_PARTIAL_2       # (previous default)
+    default 4 if PT_LVGL_RENDER_PARTIAL_1_PSRAM
+    default 5 if PT_LVGL_RENDER_PARTIAL_2_PSRAM
     help
       Integer mirror of the selected LVGL render method:
         0 = FULL_1 (one full framebuffer, PSRAM)
@@ -64,37 +95,16 @@ config PT_LV_RENDER_METHOD
         4 = PARTIAL_1_PSRAM (single partial, PSRAM preferred)
         5 = PARTIAL_2_PSRAM (double partial, PSRAM preferred)
 
-config PT_LV_RENDER_PARTIAL_BUFFER_LINES
+config PT_LVGL_RENDER_PARTIAL_BUFFER_LINES
     int "Partial render lines"
     range 16 480
     default 80
+    depends on (PT_LVGL_RENDER_METHOD = 2) || (PT_LVGL_RENDER_METHOD = 3) || (PT_LVGL_RENDER_METHOD = 4) || (PT_LVGL_RENDER_METHOD = 5)
     help
       Number of vertical lines per partial buffer. Higher = fewer flushes (more memory).
       Lower = smaller buffers (less memory), potentially more flushes.
 
-config PT_LV_RENDER_BOUNCING_BUFFER_LINES
-    int "Bounce buffer lines"
-    range 1 64
-    default 10
-    help
-      Number of scanlines in the bounce buffer.
-
-config PT_LVGL_TASK_STACK_SIZE
-    int "LVGL task stack size (kB)"
-    range 8 1024
-    default 8
-    help
-      Amount of stack (in kilobytes) to reserve for the LVGL task/thread.
-      Minimum is 8 kB. Increase this value if LVGL, display drivers or touch drivers
-      require larger stacks on your target hardware.
-
-config PT_USE_CUSTOM_INTERNAL_MALLOC
-    bool "Use internal custom malloc for LVGL"
-    depends on LV_USE_CUSTOM_MALLOC
-    default y
-    help
-      Enables the use of the custom internal Pandatouch_IDF memory allocator for LVGL otherwise you
-      must provide your own implementation of lv_mem_init().
+    
 
 
 endmenu
