@@ -4,7 +4,7 @@
 [![ESP-IDF](https://img.shields.io/badge/esp--idf-%3E=5.1-brightgreen)](https://docs.espressif.com/)
 [![LVGL](https://img.shields.io/badge/LVGL-v9-orange)](https://lvgl.io/)
 
-A compact ESP-IDF component collection for PandaTouch-style LCD + touch hardware: LVGL display glue 🖥️, GT911 touch driver ✋, and a simple USB Mass Storage (MSC) VFS wrapper 🔌 — with usage examples and safety-minded helpers.
+A compact ESP-IDF component collection for PandaTouch: LVGL display glue 🖥️, GT911 touch driver ✋, and a simple USB Mass Storage (MSC) VFS wrapper 🔌 — with usage examples and safety-minded helpers.
 
 ## Table of Contents
 
@@ -142,9 +142,6 @@ Why use it:
 Caveats:
 
 - LVGL image decoders and file APIs must be enabled in your LVGL configuration.
-- The driver registers the '/' LVGL FS letter and expects the MSC VFS to be
-  mounted at `PT_USB_MOUNT_PATH` (default `/usb`). If you change the mount
-  path, adjust usages accordingly.
 - This option is optional and safe to disable if you prefer to register a
   different LVGL filesystem driver yourself.
 - The USB-MSC API ownership rules remain the same: directory lists returned by
