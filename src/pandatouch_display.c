@@ -324,7 +324,7 @@ static void pt_lvgl_task(void *arg)
 {
     (void)arg;
     ESP_LOGI(TAG, "LVGL task started");
-    uint32_t period;
+    uint32_t period = pdMS_TO_TICKS(0);
     while (true)
     {
         PT_LVGL_SCOPE_LOCK()
