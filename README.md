@@ -21,7 +21,7 @@ A compact ESP-IDF component collection for PandaTouch: LVGL display glue 🖥️
 - [Minimal project example 🧩](#minimal-project-example)
 - [Usage examples 🧪](#usage-examples)
 - [Examples (where to find & how to run) 🗂️](#examples-where-to-find--how-to-run)
- - [Examples & usage 🧪🧩🗂️](#examples--usage)
+- [Examples & usage 🧪🧩🗂️](#examples--usage)
 - [API quick reference 📖](#api-quick-reference)
   - [Display + LVGL (minimal)](#display--lvgl)
   - [Touch (GT911 low-level) ✋](#touch-gt911-low-level)
@@ -309,15 +309,14 @@ size/complexity of your UI.
 
 > Example sources shipped in `PandaTouch_IDF/examples/` are not automatically compiled by a host project. Copy files you want into your `main/` or add an example `CMakeLists.txt` that builds the desired example as an app.
 
-How to build an example
+#### How to build an example
 
-  ```bash
-  # from project root
-  idf.py fullclean  # optional, helpful when switching IDF versions
-  . $IDF_PATH/export.sh
-  idf.py build
-  idf.py -p /dev/ttyUSB0 flash monitor
-  ```
+```bash
+# from project root
+idf.py fullclean  # optional, helpful when switching IDF versions
+idf.py build
+idf.py -p [DEVICE_PORT] flash monitor
+```
 
 If you prefer to add this component to an existing app:
 
