@@ -12,18 +12,16 @@ A compact ESP-IDF component collection for PandaTouch: LVGL display glue 🖥️
 - [Supported software & hardware 🧰](#supported-software--hardware)
 - [Features ✨](#features)
 - [Documentation 📚](#documentation)
-- [Configuration 🛠️](#configuration)
-  - [Setup PandaTouch Kconfig](#setup-pandatouch-kconfig)
-  - [LVGL memory allocator (Kconfig)](#lvgl-memory-allocator-kconfig)
-  - [LVGL stdio-backed FS (Kconfig)](#lvgl-stdio-backed-fs-kconfig)
-  - [LVGL render options](#lvgl-render-options)
 - [Create a new project 🆕](#create-a-new-project)
-  - [Add via IDF Component Manager (git or local path) (recommended) 🔗](#a--add-via-idf-component-manager-git-or-local-path-recommended)
-  - [Use it as a local component (components/) 📁](#b--use-it-as-a-local-component-components)
-  - [Add as a Git submodule 🔀](#c--add-as-a-git-submodule)
-- [Minimal project example 🧩](#minimal-project-example-mainc)
+- [Configuration 🛠️](#configuration)
+  - [Setup PandaTouch ](#setup-pandatouch)
+  - [LVGL memory allocator](#lvgl-memory-allocator)
+  - [LVGL stdio-backed FS](#lvgl-stdio-backed-fs)
+  - [LVGL render options](#lvgl-render-options)
+- [Minimal project example 🧩](#minimal-project-example)
 - [Usage examples 🧪](#usage-examples)
 - [Examples (where to find & how to run) 🗂️](#examples-where-to-find--how-to-run)
+ - [Examples & usage 🧪🧩🗂️](#examples--usage)
 - [API quick reference 📖](#api-quick-reference)
   - [Display + LVGL (minimal)](#display--lvgl)
   - [Touch (GT911 low-level) ✋](#touch-gt911-low-level)
@@ -68,9 +66,44 @@ Additional, higher-detail documentation is available in the repository. Key docs
 - [docs/lvgl_touch.md](./docs/lvgl_touch.md) — LVGL glue and input device mapping
 - [Espressif FAQ ](https://docs.espressif.com/projects/esp-faq/en/latest/software-framework/peripherals/lcd.html#why-do-i-get-drift-overall-drift-of-the-display-when-esp32-s3-is-driving-an-rgb-lcd-screen) - Why do I get drift (overall drift of the display) when ESP32-S3 is driving an RGB LCD screen?
 
+## Create a new project
+
+- Create a new IDF project
+
+  ```bash
+  idf.py create-project hello_pandatouch
+  cd hello_idf
+  ```
+
+- Clone PandaTouch component
+
+  ```bash
+  git clone https://github.com/bigtreetech/PandaTouch_IDF.git components/PandaTouch_IDF
+  ```
+
+- Select target chip & apply default config
+
+  ```bash
+  idf.py -DSDKCONFIG_DEFAULTS="$(pwd)/components/PandaTouch_IDF/sdkconfig.defaults" set-target esp32s3
+  ```
+
+- Configure project (optional)
+
+  ```bash
+  idf.py menuconfig
+  ```
+
+- Build, flash & monitor
+
+  ```bash
+  idf.py build
+  idf.py -p /dev/xxx flash
+  idf.py monitor
+  ```
+
 ## Configuration
 
-### Setup PandaTouch Kconfig
+### Setup PandaTouch
 
 To change PandaTouch-specific Kconfig options (for example the LVGL allocator or
 the LVGL stdio-backed FS option) open the ESP-IDF menuconfig for your project
@@ -88,7 +121,7 @@ idf.py menuconfig
 
 3. Toggle or edit the option and press `S` to save, then exit menuconfig.
 
-### LVGL memory allocator (Kconfig)
+### LVGL memory allocator
 
 This component ships an optional internal LVGL memory allocator enabled by the
 `PT_LVGL_USE_PT_INTERNAL_MALLOC` Kconfig option (which depends on `LV_USE_CUSTOM_MALLOC`).
@@ -126,7 +159,7 @@ SPIRAM (when available). If you disable this option you must provide your own`lv
   Keep an eye on LVGL heap size and fragmentation for larger UIs; a custom
   allocator may yield better performance.
 
-### LVGL stdio-backed FS (Kconfig)
+### LVGL stdio-backed FS
 
 This component includes an optional Kconfig option `PT_LVGL_USE_PT_INTERNAL_STDIO`.
 When enabled, `pt_usb_start()` will call `pt_lvgl_stdio_fs_init()` to register a
@@ -178,68 +211,9 @@ size/complexity of your UI.
   - Stack reserved for the LVGL thread. Increase this when running larger
     displays, heavier LVGL tasks, or when using complex touch drivers.
 
-## Create a new project
+## Examples & usage
 
-This section shows three common ways to create a fresh ESP-IDF project and include `PandaTouch_IDF`: (A) use the IDF component manager (recommended), (B) add the component locally in `components/`, or (C) add it as a Git submodule.
-
-Prerequisites
-
-- ESP-IDF installed and exported (`. $IDF_PATH/export.sh`).
-- A working project directory (see the minimal example below).
-
-#### (A) — Add via IDF Component Manager (git or local path) [recommended]
-
-1. Create a new project directory (you can use the official template or a minimal layout):
-
-   ```
-   my-app/
-   ├─ main/
-   │   └─ main.c
-   ├─ CMakeLists.txt
-   └─ idf_component.yml    # project component manifest
-   ```
-
-2. In your project's `idf_component.yml` add the dependency list. Use `git:` to pull from the remote repo, or `path:` to point at a local copy during development.
-
-   - Example `idf_component.yml` (dependency snippet):
-
-     ```yaml
-     dependencies:
-     lvgl/lvgl: ~9.3.0
-     espressif/usb_host_msc: ^1.1.3
-     PandaTouch_IDF:
-       git: https://github.com/bigtreetech/PandaTouch_IDF.git
-     ```
-
-3. Build normally with `idf.py build` and the IDF component manager will fetch remote deps or use the local path.
-
-> The IDF component manager resolves components listed in `idf_component.yml` automatically.
-
-#### (B) — Use it as a local component (components/)
-
-1. Place `PandaTouch_IDF` inside your project's `components/` folder:
-
-   ```
-   my-app/
-   ├─ components/
-   │   └─ PandaTouch_IDF/  (copy of this repo)
-   └─ main/
-   ```
-
-2. The project build system will include any component under `components/` automatically. No manifest changes required.
-
-#### (C) — Add as a Git submodule
-
-From your project root:
-
-    ```bash
-    git submodule add https://github.com/bigtreetech/PandaTouch_IDF.git components/PandaTouch_IDF
-    git submodule update --init --recursive
-    ```
-
-Then build as usual. This keeps a tracked copy of the dependency within your repo and is useful if you want a reproducible, versioned dependency.
-
-## Minimal project example (main.c)
+### Minimal project example
 
 - Create `main/main.c` with a tiny app that shows how to include and call display init:
 
@@ -270,19 +244,19 @@ Then build as usual. This keeps a tracked copy of the dependency within your rep
   project(my_app)
   ```
 
-## Usage examples
+### Usage examples
 
 - Display LVGL
 
   ```c
   if (pt_display_init() != ESP_OK) {
-      ESP_LOGE("app", "display init failed");
-      return;
+    ESP_LOGE("app", "display init failed");
+    return;
   }
 
   /* Set backlight to 80% */
   if (!pt_backlight_set(80)) {
-      ESP_LOGW("app", "backlight set failed");
+    ESP_LOGW("app", "backlight set failed");
   }
 
   /* Schedule UI work from another FreeRTOS task */
@@ -294,7 +268,7 @@ Then build as usual. This keeps a tracked copy of the dependency within your rep
   ```c
   lv_indev_t *indev = pt_lvgl_touch_init(NULL, 800, 480);
   if (!indev) {
-      ESP_LOGE("app", "pt_lvgl_touch_init failed");
+    ESP_LOGE("app", "pt_lvgl_touch_init failed");
   }
   ```
 
@@ -304,28 +278,30 @@ Then build as usual. This keeps a tracked copy of the dependency within your rep
 
   ```c
   void on_mount(void) {
-      pt_usb_dir_list_t *list = pt_usb_list_dir("/", NULL);
-      if (list) {
-          for (size_t i = 0; i < list->count; ++i) {
-              printf("%s %s\n", list->entries[i].is_dir ? "DIR " : "FILE", list->entries[i].path);
-          }
-          pt_usb_dir_list_free(list);
+    pt_usb_dir_list_t *list = pt_usb_list_dir("/", NULL);
+    if (list) {
+      for (size_t i = 0; i < list->count; ++i) {
+        printf("%s %s\n", list->entries[i].is_dir ? "DIR " : "FILE", list->entries[i].path);
       }
-      /* Write a test file */
-      const char *msg = "hello panda\n";
-      pt_usb_write("/event_sample.txt", msg, strlen(msg), false);
+      pt_usb_dir_list_free(list);
+    }
+    /* Write a test file */
+    const char *msg = "hello panda\n";
+    pt_usb_write("/event_sample.txt", msg, strlen(msg), false);
   }
 
   int app_main(void) {
-      pt_usb_on_mount(on_mount);
-      if (!pt_usb_start()) {
-          ESP_LOGE("app", "usb host start failed");
-      }
-      // keep running...
+    pt_usb_on_mount(on_mount);
+    if (!pt_usb_start()) {
+      ESP_LOGE("app", "usb host start failed");
+    }
+    // keep running...
   }
   ```
 
 ## Examples (where to find & how to run)
+
+### Examples (where to find & how to run)
 
 - `examples/display_sample.c` — LVGL + scheduler + backlight demo
 - `examples/msc_sample.c` — Demonstrates USB Mass Storage usage with mount/unmount event callbacks; ideal for event-driven applications.
@@ -335,13 +311,13 @@ Then build as usual. This keeps a tracked copy of the dependency within your rep
 
 How to build an example
 
-    ```bash
-    # from project root
-    idf.py fullclean  # optional, helpful when switching IDF versions
-    . $IDF_PATH/export.sh
-    idf.py build
-    idf.py -p /dev/ttyUSB0 flash monitor
-    ```
+  ```bash
+  # from project root
+  idf.py fullclean  # optional, helpful when switching IDF versions
+  . $IDF_PATH/export.sh
+  idf.py build
+  idf.py -p /dev/ttyUSB0 flash monitor
+  ```
 
 If you prefer to add this component to an existing app:
 
