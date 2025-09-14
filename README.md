@@ -72,13 +72,15 @@ Additional, higher-detail documentation is available in the repository. Key docs
 
   ```bash
   idf.py create-project hello_pandatouch
-  cd hello_idf
+  cd hello_pandatouch
   ```
 
-- Clone PandaTouch component
+- Add dependencies
 
   ```bash
   git clone https://github.com/bigtreetech/PandaTouch_IDF.git components/PandaTouch_IDF
+  idf.py add-dependency "espressif/usb_host_msc"
+  idf.py add-dependency "lvgl/lvgl"
   ```
 
 - Select target chip & apply default config
@@ -86,6 +88,8 @@ Additional, higher-detail documentation is available in the repository. Key docs
   ```bash
   idf.py -DSDKCONFIG_DEFAULTS="$(pwd)/components/PandaTouch_IDF/sdkconfig.defaults" set-target esp32s3
   ```
+
+````
 
 - Configure project (optional)
 
@@ -392,3 +396,4 @@ See also: [CONTRIBUTING.md](./CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](./CODE_O
 This repository is provided under the MIT License (assumed). Replace or specify a different license if required.
 
 MIT © Bigtreetech
+````
