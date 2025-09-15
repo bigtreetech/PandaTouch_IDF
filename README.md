@@ -293,6 +293,12 @@ size/complexity of your UI.
   }
 
   int app_main(void) {
+
+    if (pt_display_init() != ESP_OK) {
+      ESP_LOGE("app", "display init failed");
+      return;
+    }
+
     pt_usb_on_mount(on_mount);
     if (!pt_usb_start()) {
       ESP_LOGE("app", "usb host start failed");
@@ -313,16 +319,51 @@ size/complexity of your UI.
 
 #### How to build an example
 
-```bash
-# from project root
-idf.py fullclean  # optional, helpful when switching IDF versions
-idf.py build
-idf.py -p [DEVICE_PORT] flash monitor
-```
+Create a small standalone project that uses this component (recommended for first-time testing).
 
-If you prefer to add this component to an existing app:
+- Create a fresh ESP-IDF project and enter it:
 
-- Place the repo in `components/PandaTouch_IDF` or add it to your project workspace, then include the headers and link normally.
+  ```bash
+  # create a project named `hello_pandatouch` and enter it
+  idf.py create-project hello_pandatouch
+  cd hello_pandatouch
+  ```
+
+- Add the PandaTouch component to your project (clone into the `components/` directory):
+
+  ```bash
+  git clone https://github.com/bigtreetech/PandaTouch_IDF.git components/PandaTouch_IDF
+  ```
+
+- Add any required dependencies to the project (the component may depend on LVGL and USB host MSC). From the project root run:
+
+  ```bash
+  idf.py add-dependency "espressif/usb_host_msc"
+  idf.py add-dependency "lvgl/lvgl"
+  ```
+
+- Select target chip & apply default config
+
+  ```bash
+  idf.py -DSDKCONFIG_DEFAULTS="$(pwd)/components/PandaTouch_IDF/sdkconfig.defaults" set-target esp32s3
+  ```
+
+- Copy one of the shipped example sources into your app's `main/` directory.
+
+  ```bash
+  cp components/PandaTouch_IDF/examples/display_sample.c main/hello_pandatouch.c
+  # -- or --
+  cp components/PandaTouch_IDF/examples/display_slideshow.c main/hello_pandatouch.c
+  # -- or --
+  cp components/PandaTouch_IDF/examples/msc_sample.c main/hello_pandatouch.c
+  ```
+
+- Build, flash and open the monitor. Replace the port with your device path (e.g. `/dev/tty.SLAB_USBtoUART`, `/dev/tty.usbserial-XXXX`, or `comX`):
+
+  ```bash
+  idf.py build
+  idf.py -p /dev/tty.YOURPORT flash monitor
+  ```
 
 ## API quick reference
 
