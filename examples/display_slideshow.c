@@ -1,7 +1,9 @@
-
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <dirent.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -9,13 +11,12 @@
 #include "lvgl.h"
 #include "draw/lv_image_decoder.h"
 #include "draw/lv_image_decoder_private.h"
+
 #include "pandatouch_display.h"
 #include "pandatouch_msc.h"
 #include "pandatouch_lvgl_msc.h"
-#include <dirent.h>
-#include <errno.h>
 
-static const char *TAG = "display_slideshow";
+static const char *TAG = "PandaTouch_display_slideshow";
 
 // UI objects (owned by LVGL thread)
 static lv_obj_t *s_img = NULL;
@@ -39,7 +40,6 @@ static void usb_on_mount(void);
 static void usb_on_unmount(void);
 
 // Recursively scan path using pt_usb_list_dir and collect *.png/*.PNG
-// ...existing code...
 static void scan_dir_recursive(const char *path, char ***out_arr, size_t *out_cnt)
 {
     ESP_LOGI(TAG, "scan_dir_recursive: %s", path ? path : "(null)");
@@ -116,7 +116,7 @@ static void scan_dir_recursive(const char *path, char ***out_arr, size_t *out_cn
 
     pt_usb_dir_list_free(list);
 }
-// ...existing code...
+
 static void free_image_list(char **arr, size_t cnt)
 {
     if (!arr)
@@ -132,7 +132,6 @@ static void usb_on_mount(void)
 {
     ESP_LOGI(TAG, "USB mounted callback");
     s_usb_mounted = true;
-    // scan in background task
     scan_usb_for_pngs();
 }
 
@@ -200,7 +199,6 @@ static void ui_create(void *arg)
 
     // main image area (left)
     s_img = lv_img_create(scr);
-    lv_coord_t disp_w = lv_display_get_horizontal_resolution(pt_get_display());
     lv_coord_t disp_h = lv_display_get_vertical_resolution(pt_get_display());
     lv_obj_set_size(s_img, 400, 400);
     lv_obj_align(s_img, LV_ALIGN_TOP_LEFT, 0, 0);
@@ -208,15 +206,52 @@ static void ui_create(void *arg)
     lv_obj_set_style_border_color(s_img, lv_color_hex(0xff0000), 0);
     lv_obj_set_style_border_width(s_img, 2, 0);
 
+    static const lv_style_prop_t slider_props[] = {LV_STYLE_BG_COLOR, 0};
+    static lv_style_transition_dsc_t slider_transition_dsc;
+    lv_style_transition_dsc_init(&slider_transition_dsc, slider_props, lv_anim_path_linear, 300, 0, NULL);
+
+    static lv_style_t slider_style_main;
+    static lv_style_t slider_style_indicator;
+    static lv_style_t slider_style_knob;
+    static lv_style_t slider_style_pressed_color;
+
+    lv_style_init(&slider_style_main);
+    lv_style_set_bg_opa(&slider_style_main, LV_OPA_COVER);
+    lv_style_set_bg_color(&slider_style_main, lv_color_hex3(0xbbb));
+    lv_style_set_radius(&slider_style_main, LV_RADIUS_CIRCLE);
+    lv_style_set_pad_ver(&slider_style_main, -2); /*Makes the indicator larger*/
+
+    lv_style_init(&slider_style_indicator);
+    lv_style_set_bg_opa(&slider_style_indicator, LV_OPA_COVER);
+    lv_style_set_bg_color(&slider_style_indicator, lv_palette_main(LV_PALETTE_CYAN));
+    lv_style_set_radius(&slider_style_indicator, LV_RADIUS_CIRCLE);
+    lv_style_set_transition(&slider_style_indicator, &slider_transition_dsc);
+
+    lv_style_init(&slider_style_knob);
+    lv_style_set_bg_opa(&slider_style_knob, LV_OPA_COVER);
+    lv_style_set_bg_color(&slider_style_knob, lv_palette_main(LV_PALETTE_CYAN));
+    lv_style_set_border_color(&slider_style_knob, lv_palette_darken(LV_PALETTE_CYAN, 3));
+    lv_style_set_border_width(&slider_style_knob, 2);
+    lv_style_set_radius(&slider_style_knob, LV_RADIUS_CIRCLE);
+    lv_style_set_pad_all(&slider_style_knob, 6); /*Makes the knob larger*/
+    lv_style_set_transition(&slider_style_knob, &slider_transition_dsc);
+
+    lv_style_init(&slider_style_pressed_color);
+    lv_style_set_bg_color(&slider_style_pressed_color, lv_palette_darken(LV_PALETTE_CYAN, 2));
+
     // Big slider on the right
     lv_obj_t *sld = lv_slider_create(scr);
-    lv_obj_set_width(sld, (disp_w * 20) / 100);
+    lv_obj_set_width(sld, 32);
     lv_obj_set_height(sld, (disp_h * 60) / 100);
-    lv_obj_align(sld, LV_ALIGN_RIGHT_MID, -10, 0);
+    lv_obj_align(sld, LV_ALIGN_RIGHT_MID, -20, 0);
     lv_slider_set_range(sld, 20, 100);
     lv_slider_set_value(sld, (int)pt_backlight_get(), LV_ANIM_OFF);
 
-    // (Optional) adjust slider visual style via styles if needed.
+    lv_obj_add_style(sld, &slider_style_main, LV_PART_MAIN);
+    lv_obj_add_style(sld, &slider_style_indicator, LV_PART_INDICATOR);
+    lv_obj_add_style(sld, &slider_style_pressed_color, (lv_style_selector_t)((int)LV_PART_INDICATOR | (int)LV_STATE_PRESSED));
+    lv_obj_add_style(sld, &slider_style_knob, LV_PART_KNOB);
+    lv_obj_add_style(sld, &slider_style_pressed_color, (lv_style_selector_t)((int)LV_PART_KNOB | (int)LV_STATE_PRESSED));
 
     // slider event -> set backlight (runs on LVGL thread)
     lv_obj_add_event_cb(sld, slider_event_cb, LV_EVENT_ALL, NULL);
@@ -267,114 +302,7 @@ static void ui_set_image_by_path(const char *path, const char *name)
 
     ESP_LOGI(TAG, "ui_set_image_by_path called on LVGL thread for %s", path);
 
-    /* quick runtime check: try fopen to see whether the VFS can open the file */
-    FILE *f = fopen(path, "rb");
-    if (!f)
-    {
-        ESP_LOGW(TAG, "ui_set_image_by_path: fopen failed for '%s' (errno=%d)", path, errno);
-    }
-    else
-    {
-        fseek(f, 0, SEEK_END);
-        long sz = ftell(f);
-        rewind(f);
-        ESP_LOGI(TAG, "ui_set_image_by_path: fopen succeeded, size=%ld bytes", sz);
-        fclose(f);
-    }
-
-    /* Diagnostic: list registered LVGL image decoders once */
-    {
-        lv_image_decoder_t *dec = NULL;
-        ESP_LOGI(TAG, "Registered LVGL image decoders:");
-        while ((dec = lv_image_decoder_get_next(dec)) != NULL)
-        {
-            ESP_LOGI(TAG, "  decoder: %s info_cb=%p open_cb=%p get_area_cb=%p",
-                     dec->name ? dec->name : "(anonymous)",
-                     (void *)dec->info_cb, (void *)dec->open_cb, (void *)dec->get_area_cb);
-        }
-    }
-
-    /* Use LVGL's FS API to read the first bytes of the file as LVGL will see it */
-    {
-        lv_fs_file_t file;
-        lv_fs_res_t fres = lv_fs_open(&file, path, LV_FS_MODE_RD);
-        if (fres != LV_FS_RES_OK)
-        {
-            ESP_LOGW(TAG, "lv_fs_open failed for '%s' -> %d", path, (int)fres);
-        }
-        else
-        {
-            uint8_t hdr[32];
-            uint32_t br = 0;
-            lv_memzero(hdr, sizeof(hdr));
-            fres = lv_fs_read(&file, hdr, sizeof(hdr), &br);
-            if (fres != LV_FS_RES_OK)
-            {
-                ESP_LOGW(TAG, "lv_fs_read failed -> %d", (int)fres);
-            }
-            else
-            {
-                char buf[128];
-                size_t off = 0;
-                size_t to_print = br > 16 ? 16 : br;
-                for (size_t i = 0; i < to_print; ++i)
-                {
-                    off += snprintf(buf + off, sizeof(buf) - off, "%02X ", hdr[i]);
-                    if (off >= sizeof(buf) - 8)
-                        break;
-                }
-                ESP_LOGI(TAG, "lv_fs_read: read %u bytes: %s", (unsigned)br, buf);
-            }
-            lv_fs_close(&file);
-        }
-    }
-
-    /* Diagnostic: query LVGL image decoder about this file */
-    {
-        lv_image_header_t header;
-        lv_memzero(&header, sizeof(header));
-        lv_result_t rinfo = lv_image_decoder_get_info((const void *)path, &header);
-        if (rinfo == LV_RESULT_OK)
-        {
-            ESP_LOGI(TAG, "lv_image_decoder_get_info: W=%d H=%d CF=%d", (int)header.w, (int)header.h, (int)header.cf);
-        }
-        else
-        {
-            ESP_LOGW(TAG, "lv_image_decoder_get_info: FAILED (%d)", (int)rinfo);
-        }
-
-        /* Try opening the image via decoder APIs to see if decoder can actually open/produce data */
-        lv_image_decoder_dsc_t dsc;
-        lv_memzero(&dsc, sizeof(dsc));
-        lv_result_t ropen = lv_image_decoder_open(&dsc, (const void *)path, NULL);
-        ESP_LOGI(TAG, "lv_image_decoder_open returned %d, decoder=%p, decoded=%p", (int)ropen, (void *)dsc.decoder, (void *)dsc.decoded);
-        if (ropen == LV_RESULT_OK)
-        {
-            if (dsc.decoded)
-            {
-                ESP_LOGI(TAG, "Decoder provided decoded buffer: W=%d H=%d CF=%d stride=%d data=%p",
-                         (int)dsc.decoded->header.w, (int)dsc.decoded->header.h, (int)dsc.decoded->header.cf, (int)dsc.decoded->header.stride, (void *)dsc.decoded->data);
-            }
-            else
-            {
-                ESP_LOGI(TAG, "Decoder did not provide immediate decoded buffer (decoded==NULL). Will call get_area to request full image decode.");
-                if (rinfo == LV_RESULT_OK)
-                {
-                    lv_area_t full_area = {0, 0, (lv_coord_t)header.w - 1, (lv_coord_t)header.h - 1};
-                    lv_area_t decoded_area;
-                    lv_result_t rget = lv_image_decoder_get_area(&dsc, &full_area, &decoded_area);
-                    ESP_LOGI(TAG, "lv_image_decoder_get_area returned %d, decoded_area: x1=%d y1=%d x2=%d y2=%d",
-                             (int)rget, (int)decoded_area.x1, (int)decoded_area.y1, (int)decoded_area.x2, (int)decoded_area.y2);
-                }
-            }
-            lv_image_decoder_close(&dsc);
-        }
-    }
-
-    // remove any previous children (e.g. placeholder labels)
     lv_obj_clean(s_img);
-    // LVGL image decoder will attempt to load the file. If it fails, behavior
-    // depends on LVGL config. We still try to set the src to the absolute path.
     lv_img_set_src(s_img, path);
 }
 
@@ -404,23 +332,20 @@ static void start_slideshow_task(void *arg)
                 idx = 0;
 
             // schedule UI update on LVGL thread
-            const char *p = s_images[idx];
-            const char *name = p ? strrchr(p, '/') : NULL;
-            if (name)
-                name++;
-            ESP_LOGI(TAG, "slideshow: scheduling image %zu/%zu -> %s", idx + 1, s_images_count, p ? p : "(null)");
+            const char *image = s_images[idx];
+            ESP_LOGI(TAG, "slideshow: scheduling image %zu/%zu -> %s", idx + 1, s_images_count, image ? image : "(null)");
             /* quick pre-flight check: ensure the image path is readable from this task */
-            FILE *f = fopen(p, "rb");
+            FILE *f = fopen(image, "rb");
             if (!f)
             {
-                ESP_LOGW(TAG, "slideshow: fopen failed for '%s' before scheduling (errno=%d)", p ? p : "(null)", errno);
+                ESP_LOGW(TAG, "slideshow: fopen failed for '%s' before scheduling (errno=%d)", image ? image : "(null)", errno);
             }
             else
             {
                 fclose(f);
             }
 
-            pt_display_schedule_ui(ui_set_image_arg, (void *)p);
+            pt_display_schedule_ui(ui_set_image_arg, (void *)image);
 
             // advance
             idx = (idx + 1) % s_images_count;
