@@ -4,15 +4,20 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
+#include "pandatouch_display.h"
 #include "pandatouch_msc.h"
 
-static const char *TAG = "msc_sample";
+// Tag for logging
+static const char *TAG = "PandaTouch_msc_sample";
 
+// Callback function called when USB storage is mounted
 static void on_mount_cb(void)
 {
     ESP_LOGI(TAG, "Mount callback fired");
+
+    // List files and directories in the USB root
     int err = 0;
-    pt_usb_dir_list_t *list = pt_usb_list_dir("/", &err);
+    pt_usb_dir_list_t *list = pt_usb_list_dir("/usb", &err);
     if (!list)
     {
         ESP_LOGE(TAG, "list dir failed: %d", err);
@@ -34,25 +39,30 @@ static void on_mount_cb(void)
 
     pt_usb_dir_list_free(list);
 
-    // simple write/read test
-    const char *p = "/sample.txt";
+    // Simple write/read test on the USB drive
+    const char *p = "/usb/sample.txt";
     const char *data = "Hello World\n";
-    int w = pt_usb_write(p, (const uint8_t *)data, strlen(data));
+
+    // Write data to a file
+    int w = pt_usb_write(p, (const uint8_t *)data, strlen(data), false);
     if (w == 0)
     {
         ESP_LOGI(TAG, "wrote %s", p);
-        char *buf = NULL;
-        int r = pt_usb_read(p, &buf, &err);
-        if (r >= 0 && buf)
+
+        // Read back the data from the file
+        char buf[256];
+        size_t got = 0;
+        int r = pt_usb_read(p, buf, sizeof(buf) - 1, &got);
+        if (r == 0)
         {
+            buf[got] = '\0';
             ESP_LOGI(TAG, "read back: %s", buf);
-            free(buf);
         }
         else
         {
-            ESP_LOGE(TAG, "read back failed: %d", err);
+            ESP_LOGE(TAG, "read back failed: %d", r);
         }
-        // cleanup
+        // Remove the file after test
         pt_usb_remove(p);
     }
     else
@@ -61,14 +71,21 @@ static void on_mount_cb(void)
     }
 }
 
-void app_main(void)
+// Main entry point for the application
+extern "C" void app_main(void)
 {
     ESP_LOGI(TAG, "Starting MSC sample");
-    // register mount callback (will fire immediately if already mounted)
+
+    // Initialize the display
+    pt_display_init();
+
+    // Register mount callback (will fire immediately if already mounted)
     pt_usb_on_mount(on_mount_cb);
+
+    // Start USB MSC (Mass Storage Class) handling
     pt_usb_start();
 
-    // keep the main task alive
+    // Keep the main task alive (demo purpose)
     while (1)
     {
         vTaskDelay(pdMS_TO_TICKS(10000));
