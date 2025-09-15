@@ -695,14 +695,15 @@ static void pt_usb_host_events_task(void *arg)
         uint32_t flags = 0;
         esp_err_t r = usb_host_lib_handle_events(portMAX_DELAY, &flags);
         if (r != ESP_OK)
-            continue;
+            break;
 
         if (flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS)
         {
             usb_host_device_free_all();
         }
-        // If ALL_FREE is set, library has no internal allocations; keep task alive.
     }
+    s_usb_events_task = NULL;
+    vTaskDelete(NULL);
 }
 
 static void pt_usb_msc_events_task(void *arg)
@@ -712,6 +713,7 @@ static void pt_usb_msc_events_task(void *arg)
     {
         // drain MSC driver events
     }
+    s_pt_usb_msc_events_task = NULL;
     vTaskDelete(NULL);
 }
 
