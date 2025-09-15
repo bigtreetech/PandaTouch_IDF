@@ -1,10 +1,5 @@
 # PandaTouch MSC (USB Mass Storage) API
 
-This document describes the public API declared in `include/pandatouch_msc.h`.
-It documents types, ownership rules, error semantics, and short usage examples.
-
-## Overview
-
 The API provides a small wrapper around the ESP-IDF MSC (USB Mass Storage) host + VFS.
 It exposes mount lifecycle functions, simple file operations and a directory listing helper.
 
