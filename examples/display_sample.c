@@ -5,8 +5,8 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "pandatouch_display.h"
 #include "lvgl.h"
+#include "pandatouch_display.h"
 
 static lv_obj_t *g_label = NULL;
 
@@ -25,7 +25,9 @@ static void ui_update_async(void *arg)
 {
     (void)arg;
     if (!g_label)
+    {
         return;
+    }
     lv_label_set_text(g_label, "Updated via schedule_ui");
 }
 
@@ -53,7 +55,7 @@ static void bg_task(void *arg)
     vTaskDelete(NULL);
 }
 
-void app_main(void)
+extern "C" void app_main(void)
 {
     if (pt_display_init() != ESP_OK)
     {
