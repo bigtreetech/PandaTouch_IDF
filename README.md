@@ -13,7 +13,7 @@ A compact ESP-IDF component collection for PandaTouch: LVGL display glue 🖥️
 - [Features ✨](#features)
 - [Documentation 📚](#documentation)
 - [Create a new project 🆕](#create-a-new-project)
-- [Configuration 🛠️](#configuration)
+- [Configuration](#configuration)
   - [Setup PandaTouch ](#setup-pandatouch)
   - [LVGL memory allocator](#lvgl-memory-allocator)
   - [LVGL stdio-backed FS](#lvgl-stdio-backed-fs)
@@ -88,8 +88,6 @@ Additional, higher-detail documentation is available in the repository. Key docs
   ```bash
   idf.py -DSDKCONFIG_DEFAULTS="$(pwd)/components/PandaTouch_IDF/sdkconfig.defaults" set-target esp32s3
   ```
-
-````
 
 - Configure project (optional)
 
@@ -396,4 +394,7 @@ See also: [CONTRIBUTING.md](./CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](./CODE_O
 This repository is provided under the MIT License (assumed). Replace or specify a different license if required.
 
 MIT © Bigtreetech
-````
+
+```
+
+```
