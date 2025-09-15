@@ -96,10 +96,6 @@ bool pt_usb_start(void)
     xTaskCreate(pt_usb_host_events_task, "usb_host_ev", PT_USB_HOST_TASK_STACK, NULL, 5, &s_usb_events_task);
     xTaskCreate(pt_usb_msc_events_task, "msc_host_ev", PT_USB_EVENTS_TASK_STACK, NULL, 5, &s_pt_usb_msc_events_task);
 
-    // increase USB/MSC logging for diagnostics
-    esp_log_level_set("USB", ESP_LOG_DEBUG);
-    esp_log_level_set("USB_HOST", ESP_LOG_DEBUG);
-
     // install worker queue and task (small, bounded)
     if (!s_install_queue)
     {
