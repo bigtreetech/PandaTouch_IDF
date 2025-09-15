@@ -1,6 +1,3 @@
-// Simple sample app demonstrating pt_display_init, LVGL setup and
-// usage of pt_display_schedule_ui and PT_LVGL_SCOPE_LOCK().
-
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -35,9 +32,6 @@ static void ui_update_async(void *arg)
 static void bg_task(void *arg)
 {
     (void)arg;
-    // wait for display to be ready
-    vTaskDelay(pdMS_TO_TICKS(2000));
-
     // schedule work on LVGL thread
     pt_display_schedule_ui(ui_update_async, NULL);
 
