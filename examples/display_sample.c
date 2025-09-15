@@ -49,7 +49,7 @@ static void bg_task(void *arg)
     vTaskDelete(NULL);
 }
 
-extern "C" void app_main(void)
+void app_main(void)
 {
     if (pt_display_init() != ESP_OK)
     {

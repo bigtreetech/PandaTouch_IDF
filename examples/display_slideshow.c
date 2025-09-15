@@ -360,7 +360,7 @@ static void start_slideshow_task(void *arg)
     }
 }
 
-extern "C" void app_main(void)
+void app_main(void)
 {
     ESP_LOGI(TAG, "Starting display slideshow example");
 

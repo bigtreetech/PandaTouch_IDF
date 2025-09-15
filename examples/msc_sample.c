@@ -72,7 +72,7 @@ static void on_mount_cb(void)
 }
 
 // Main entry point for the application
-extern "C" void app_main(void)
+void app_main(void)
 {
     ESP_LOGI(TAG, "Starting MSC sample");
 
