@@ -4,7 +4,7 @@
 [![ESP-IDF](https://img.shields.io/badge/esp--idf-%3E=5.1-brightgreen)](https://docs.espressif.com/)
 [![LVGL](https://img.shields.io/badge/LVGL-v9-orange)](https://lvgl.io/)
 
-A compact ESP-IDF component collection for PandaTouch: LVGL display glue 🖥️, GT911 touch driver ✋, and a simple USB Mass Storage (MSC) VFS wrapper 🔌 — with usage examples and safety-minded helpers.
+A compact ESP-IDF component for [PandaTouch](https://bttwiki.com/PandaTouch.html): LVGL display glue 🖥️, GT911 touch driver ✋, and a simple USB Mass Storage (MSC) VFS wrapper 🔌 — with usage examples and safety-minded helpers.
 
 ## Table of Contents
 
