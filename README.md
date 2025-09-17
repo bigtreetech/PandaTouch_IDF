@@ -60,10 +60,11 @@ A compact ESP-IDF component collection for PandaTouch: LVGL display glue 🖥️
 
 Additional, higher-detail documentation is available in the repository. Key docs:
 
-- [display.md](./display.md) — display & LVGL rendering strategies and usage
-- [msc.md](./msc.md) — USB-MSC wrapper API, examples and ownership rules
-- [docs/touch.md](./docs/touch.md) — low-level touch driver details (GT911)
-- [docs/lvgl_touch.md](./docs/lvgl_touch.md) — LVGL glue and input device mapping
+- [pinout.md](docs/pinout.md) — board pinout reference
+- [display.md](docs/display.md) — display & LVGL rendering strategies and usage
+- [msc.md](docs/msc.md) — USB-MSC wrapper API, examples and ownership rules
+- [touch.md](docs/docs/touch.md) — low-level touch driver details (GT911)
+- [lvgl_touch.md](docs/docs/lvgl_touch.md) — LVGL glue and input device mapping
 - [Espressif FAQ ](https://docs.espressif.com/projects/esp-faq/en/latest/software-framework/peripherals/lcd.html#why-do-i-get-drift-overall-drift-of-the-display-when-esp32-s3-is-driving-an-rgb-lcd-screen) - Why do I get drift (overall drift of the display) when ESP32-S3 is driving an RGB LCD screen?
 
 ## Create a new project
