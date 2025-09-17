@@ -368,7 +368,7 @@ Create a small standalone project that uses this component (recommended for firs
 
 ## API quick reference
 
-A compact, scannable reference grouped by subsystem. Function | signature | short description.
+A compact reference grouped by subsystem. Function | signature | short description.
 
 ### Display & LVGL
 
