@@ -76,12 +76,10 @@ Additional, higher-detail documentation is available in the repository. Key docs
   cd hello_pandatouch
   ```
 
-- Add dependencies
+- Add PandaTouch_IDF component
 
   ```bash
   git clone https://github.com/bigtreetech/PandaTouch_IDF.git components/PandaTouch_IDF
-  idf.py add-dependency "espressif/usb_host_msc"
-  idf.py add-dependency "lvgl/lvgl"
   ```
 
 - Select target chip & apply default config
