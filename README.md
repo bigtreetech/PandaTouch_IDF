@@ -6,6 +6,8 @@
 
 A compact ESP-IDF component for [PandaTouch](https://bttwiki.com/PandaTouch.html): LVGL display glue 🖥️, GT911 touch driver ✋, and a simple USB Mass Storage (MSC) VFS wrapper 🔌 — with usage examples and safety-minded helpers.
 
+<img src="docs/images/pandatouch.png" width="256" style="padding:64px; background-color:#fff; border-radius:8px;">
+
 ## Table of Contents
 
 - [Prerequisites 🚀](#prerequisites)
