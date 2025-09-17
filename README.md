@@ -334,13 +334,6 @@ Create a small standalone project that uses this component (recommended for firs
   git clone https://github.com/bigtreetech/PandaTouch_IDF.git components/PandaTouch_IDF
   ```
 
-- Add any required dependencies to the project (the component may depend on LVGL and USB host MSC). From the project root run:
-
-  ```bash
-  idf.py add-dependency "espressif/usb_host_msc"
-  idf.py add-dependency "lvgl/lvgl"
-  ```
-
 - Select target chip & apply default config
 
   ```bash
